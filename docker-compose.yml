@@ -3,9 +3,9 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: 'rabbitmq'
-    # ports:
-    #   - 5672:5672
-    #   - 15672:15672
+    ports:
+      - 5672:5672
+      - 15672:15672
 
   postgres:
     image: postgres:alpine
@@ -17,6 +17,38 @@ services:
       POSTGRES_USER: postgres
     depends_on:
       - rabbitmq
+
+  extractor:
+    image: extractor
+    container_name: 'extractor'
+    build:
+      context: .
+      dockerfile: extractor/Dockerfile
+      #when building
+      shm_size: 1gb
+    #when running  
+    shm_size: 1gb
+    volumes:
+      - ./logs:/code/logs:rw
+    depends_on:
+      - postgres
+
+  scrapper:
+    image: scrapper
+    container_name: 'scrapper'
+    build:
+      context: .
+      dockerfile: scrapper/Dockerfile
+      #when building
+      shm_size: 1gb
+    #when running  
+    shm_size: 1gb
+    volumes:
+      - ./logs:/code/logs:rw
+    depends_on:
+      - extractor
+    env_file:
+      - .env
 
 networks:
   bridge:

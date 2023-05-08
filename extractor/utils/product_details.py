@@ -1,3 +1,4 @@
+#  postgresql table creation SQL statement for product details
 def product_details(conn):
     cursor = conn.cursor()
     cursor.execute(

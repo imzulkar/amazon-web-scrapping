@@ -1,3 +1,4 @@
+# postgreSQL table creation SQL statement
 def init_urls_table(conn):
     cursor = conn.cursor()
     cursor.execute(
