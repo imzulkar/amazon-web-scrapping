@@ -1,14 +1,21 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import json
-
+import os
 from scrapper import RMQ_CONN, DB_CONN
+import logging
 
+logging.getLogger(__name__) 
 
 class SearchScraper:
     def __init__(self):
         self.channel = self.setup_rabbitmq()
-        print("SearchScraper initialized")
+        logging.info("SearchScraper initialized")
+        
+        try:
+            self.products = os.environ['QUERY_PRODUCTS'].split(',')
+        except KeyError:
+            self.products = None
 
     def extractor_comm(self, data):
         self.channel.basic_publish(
@@ -16,7 +23,7 @@ class SearchScraper:
         )
 
     def init_scrapper(self):
-        self.extractor_comm({"message": "ping"})
+        self.extractor_comm({"action": "ping"})
         self.channel.basic_consume(
             queue="extractor2search",
             on_message_callback=self.process_status,
@@ -26,8 +33,12 @@ class SearchScraper:
 
     def process_status(self, channel, method, properties, body):
         message_body = json.loads(body.decode())
-        print(message_body)
-        if message_body["message"] in ["pong", "reset"]:
+        logging.info(message_body)
+        if message_body["action"] in ["pong", "reset"]:
+            # if self.products:
+            #     query = self.products.pop()
+            # else:
+            #     query= input("Enter product name: ")
             self.search_and_scrape()
 
     def setup_driver(self):
@@ -46,24 +57,28 @@ class SearchScraper:
         return channel
 
     def store_data_in_database(self, url_data):
+        cursor = DB_CONN.cursor()
         for item in url_data:
             try:
-                cursor = DB_CONN.cursor()
                 cursor.execute(
                     "INSERT INTO scraped_urls (query, url) VALUES (%s, %s)",
                     (item["query"], item["url"]),
                 )
-                DB_CONN.commit()
-                cursor.close()
             except Exception:
                 pass
+        # DB_CONN.commit()
+        cursor.close()
 
     def log_data(self, search_query, data):
-        with open(f"scraped_links_for_{search_query}.json", "w") as f:
+        with open(f"logs/products_url/scraped_links_for_{search_query}.json", "w") as f:
             json.dump(data, f)
 
     def search_and_scrape(self):
-        search_query = input("Enter product name: ")
+        try:
+            search_query = self.products.pop() if self.products else input("Enter product name: ")
+        except Exception as e:
+            search_query = ''
+            logging.warn("No more products to scrape")
         driver = self.setup_driver()
         driver.get(f"https://www.amazon.com/s?k={search_query}")
         
@@ -81,4 +96,4 @@ class SearchScraper:
 
         self.store_data_in_database(product_data)
         self.log_data(search_query=query, data=product_data)
-        self.extractor_comm({"message": "start", "query": query})
+        self.extractor_comm({"action": "start", "query": query})

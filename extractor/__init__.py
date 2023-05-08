@@ -12,9 +12,12 @@ DB_CONN = psycopg2.connect(
     database="products_scrapper",
     user="postgres",
     password="7874",
+    port=5432,
 )
+
+DB_CONN.autocommit = True
 
 product_details(conn=DB_CONN)
 
 
-RMQ_CONN = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+RMQ_CONN = pika.BlockingConnection(pika.ConnectionParameters("rabbitmq"))

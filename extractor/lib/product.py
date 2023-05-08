@@ -1,14 +1,16 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from extractor.__init__ import RMQ_CONN, DB_CONN
-import json
+import json, logging
+
+logging.getLogger(__name__) 
 
 
 class Product:
     def __init__(self):
         self.channel = self.setup_rabbitmq()
         # self.consume_product_urls()
-        print("Product initialized")
+        logging.info("Product initialized")
         self.consume_status()
 
     def scrapper_comm(self, data):
@@ -26,10 +28,10 @@ class Product:
 
     def process_status(self, channel, method, properties, body):
         message_body = json.loads(body.decode())
-        print(message_body)
-        if message_body["message"] == "ping":
-            self.scrapper_comm({"message": "pong"})
-        elif message_body["message"] == "start":
+        logging.info(message_body)
+        if message_body["action"] == "ping":
+            self.scrapper_comm({"action": "pong"})
+        elif message_body["action"] == "start":
             self.process_product_scrapping_op(message_body["query"])
         else :
             pass
@@ -39,7 +41,7 @@ class Product:
         product_data = self.scrape_product(product_urls)
         self.store_data_in_database(product_data)
         self.log_data(search_query, product_data)
-        self.scrapper_comm({"message": "reset"})
+        self.scrapper_comm({"action": "reset"})
 
     def setup_driver(self):
         options = webdriver.ChromeOptions()
@@ -92,12 +94,12 @@ class Product:
                 product_rating = "N/A"
 
             product = {
-                "product_title": product_title,
+                "product_title": product_title.strip(),
                 "product_price": product_price,
                 "product_rating": product_rating,
                 "product_url": item,
             }
-            print(product)
+            logging.info(f'Scrapped for - {product_title.strip()}')
             products.append(product)
 
         driver.quit()
@@ -105,21 +107,13 @@ class Product:
         return products
 
     def log_data(self, search_query, data):
-        with open(f"scraped_products_for_{search_query}.json", "w") as f:
+        with open(f"logs/products_detail/scraped_products_for_{search_query}.json", "w") as f:
             json.dump(data, f)
 
     def store_data_in_database(self, product_data):
+        cursor = DB_CONN.cursor()
         for item in product_data:
-            print(
-                (
-                    item["product_title"],
-                    item["product_price"],
-                    item["product_rating"],
-                    item["product_url"],
-                )
-            )
             try:
-                cursor = DB_CONN.cursor()
                 cursor.execute(
                     "INSERT INTO product_details (title, price, rating, url) VALUES (%s, %s, %s, %s)",
                     (
@@ -129,7 +123,7 @@ class Product:
                         item["product_url"],
                     ),
                 )
-                DB_CONN.commit()
-                cursor.close()
+                # DB_CONN.commit()
             except Exception as e:
-                print(e)
+                logging.error(e)
+        cursor.close()

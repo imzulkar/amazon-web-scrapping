@@ -1,3 +1,5 @@
 .venv/
 *.db
 *.json
+venv/
+.env

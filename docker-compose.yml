@@ -3,15 +3,15 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: 'rabbitmq'
-    ports:
-      - 5672:5672
-      - 15672:15672
+    # ports:
+    #   - 5672:5672
+    #   - 15672:15672
 
   postgres:
     image: postgres:alpine
     container_name: 'postgres'
     ports:
-      - 5432:5432
+      - 54321:5432
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres

@@ -7,7 +7,8 @@ def product_details(conn):
             title TEXT NOT NULL,
             price VARCHAR(10) NOT NULL,
             rating VARCHAR(5) NOT NULL,
-            url TEXT NOT NULL
+            url TEXT NOT NULL,            
+            CONSTRAINT unique_title_url UNIQUE (title, url)
         )
         """
     )
