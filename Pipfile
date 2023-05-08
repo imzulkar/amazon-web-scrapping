@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+selenium = "*"
+webdriver-manager = "==3.8.6"
+pika = "*"
+psycopg2 = "*"
+
+[dev-packages]
+
+[scripts]
+scrapper = "python -m scrapper"
+extractor = "python -m extractor"
