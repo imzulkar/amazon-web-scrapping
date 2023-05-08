@@ -74,12 +74,16 @@ To install this software, follow the steps below:
 - local .env configurations
 
   ```bash
+  QUERY_PRODUCTS = iphone12, toys, shoes
+
   HOST = hostName
   PORT = 5432
   USER = userName
   PASSWORD = Password
   DATABASE = databaseName
   ```
+
+  **Note:** You can modify the values of these environment variables according to your requirements. The `QUERY_PRODUCTS` variable is used to set the product to be searched. Replace `QUERY_PRODUCTS` with the product you want to search for on Amazon.
 
 ## `Usage`
 
